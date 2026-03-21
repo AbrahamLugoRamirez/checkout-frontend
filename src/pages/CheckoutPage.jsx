@@ -16,37 +16,9 @@ export default function CheckoutPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedData, setAcceptedData] = useState(false);
 
-  const [acceptanceToken, setAcceptanceToken] = useState('');
-  const [personalAuthToken, setPersonalAuthToken] = useState('');
-
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-
-  useEffect(() => {
-    const getTokens = async () => {
-      try {
-        const res = await fetch(
-          'https://api-sandbox.co.uat.wompi.dev/v1/merchants/pub_stagtest_g2u0HQd3ZMh05hsSgTS2lUV8t3s4mOt7'
-        );
-
-        const data = await res.json();
-
-        setAcceptanceToken(
-          data.data.presigned_acceptance.acceptance_token
-        );
-
-        setPersonalAuthToken(
-          data.data.presigned_personal_data_auth.acceptance_token
-        );
-      } catch (error) {
-        console.error(error);
-        setMessage('Error obteniendo tokens');
-      }
-    };
-
-    getTokens();
-  }, []);
 
   const handleChange = (e) => {
     setForm({
@@ -56,67 +28,32 @@ export default function CheckoutPage() {
   };
 
 
-  const createCardToken = async () => {
-    const res = await fetch(
-      'https://api-sandbox.co.uat.wompi.dev/v1/tokens/cards',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization:
-            'Bearer pub_stagtest_g2u0HQd3ZMh05hsSgTS2lUV8t3s4mOt7',
-        },
-        body: JSON.stringify(form),
-      }
-    );
-
-    const data = await res.json();
-    console.log("data", data)
-    if (!data.data) {
-      throw new Error('Error creando token');
-    }
-
-    return data.data.id;
-  };
-
 
   const handlePay = async () => {
     try {
-      if (!acceptedTerms || !acceptedData) {
-        setMessage('Debes aceptar los términos');
-        return;
-      }
       setLoading(true);
+      if (!form.number || !form.card_holder || !form.cvc || !form.exp_month || !form.exp_year) {
+        return setMessage('Falta informacion por llenar');
+      }
+      if (!acceptedTerms || !acceptedData){
+        return setMessage('Debe aceptar terminos y condiciones');
+      }
 
-      const res = await fetch(
-        'https://api-sandbox.co.uat.wompi.dev/v1/merchants/pub_stagtest_g2u0HQd3ZMh05hsSgTS2lUV8t3s4mOt7'
-      );
-
-      const data = await res.json();
-
-      const acceptanceToken =
-        data.data.presigned_acceptance.acceptance_token;
-
-      const personalAuthToken =
-        data.data.presigned_personal_data_auth.acceptance_token;
-      const token = await createCardToken();
-      const res_create = await api.post('/payments/create', {
-        token,
+      const data = {
+        card: form,
         amount: product.price,
         email: 'test@test.com',
-        acceptanceToken,
-        personalAuthToken,
-      });
-      console.log("res", res_create, res_create.data)
-      const status = res_create.data.data.status;
-      const transactionId = res_create.data.data.id;
-      if (status === 'PENDING') {
-        setMessage('⏳ Procesando pago...');
       }
+      console.log("data trul", data)
+      const res = await api.post('/payments/create', data);
+
+      const transactionId = res.data.data.id;
+
       pollTransaction(transactionId);
 
     } catch (error) {
       console.error(error);
+      setMessage('Error en el pago');
     } finally {
       setLoading(false);
     }
@@ -144,7 +81,7 @@ export default function CheckoutPage() {
           navigate(`/result?status=declined&id=${transactionId}`);
         }
 
-        // ⏱ evitar loop infinito
+  
         if (attempts > 10) {
           clearInterval(interval);
           navigate(`/result?status=timeout&id=${transactionId}`);
