@@ -1,8 +1,9 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 
 export default function ResultPage() {
   const query = new URLSearchParams(useLocation().search);
-
+  const navigate = useNavigate();
   const status = query.get('status');
 
   return (
@@ -32,6 +33,12 @@ export default function ResultPage() {
           ⚠️ Error procesando el pago
         </div>
       )}
+      <button
+        className="btn btn-primary"
+        onClick={() => navigate('/')}
+      >
+        Buy
+      </button>
     </div>
   );
 }
