@@ -1,16 +1,82 @@
-# React + Vite
+# 💳 Checkout Frontend (React)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend application for a payment checkout flow built with **React**.
+It allows users to select a product, enter credit card details, and complete a simulated payment using Wompi.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Features
 
-## React Compiler
+* 🛒 Product listing (only available stock)
+* 💳 Credit card form with:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+  * Luhn validation
+  * Visa / MasterCard detection
+  * Expiry & CVV validation
+* 📦 Order summary view
+* 🔄 Payment status handling
+* 🔔 Toast notifications (React Toastify)
+* 🎨 UI with Bootstrap
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🏗️ Tech Stack
+
+* React
+* React Router
+* Bootstrap
+* React Toastify
+* card-validator
+
+---
+
+## ⚙️ Installation
+
+```bash
+npm install
+npm run dev
+```
+
+---
+
+## 📂 Main Pages
+
+* `/` → Product list
+* `/checkout` → Card form
+* `/summary` → Payment summary
+* `/result` → Payment result
+
+---
+
+## 💳 Test Cards
+
+Use only test cards:
+
+* Visa: `4242 4242 4242 4242`
+* MasterCard: `5555 5555 5555 4444`
+
+---
+
+## 🔄 Flow
+
+1. User selects a product
+2. Enters card details
+3. Frontend validates data
+4. Sends request to backend
+5. Redirects to summary
+6. Executes payment
+7. Displays result
+
+---
+
+## ⚠️ Notes
+
+* Card data is not stored
+* Validation is only for UX
+* Backend handles real transaction logic
+
+---
+
+## 👩‍💻 Author
+
+Abraham Lugo Ramirez
