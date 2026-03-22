@@ -1,104 +1,27 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { api } from '../services/api';
-import valid from 'card-validator';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { setPaymentData, loadFromStorage } from '../store/paymentSlice';
-import { useState } from 'react';
+import { loadFromStorage } from '../store/paymentSlice';
+import valid from 'card-validator';
 import { createPortal } from 'react-dom';
+import { usePayment } from '../hooks/usePayment';
+
 const Summary = () => {
-    const navigate = useNavigate();
-    const { product, form } = useSelector((state) => state.payment);
-    const [loading, setLoading] = useState(false);
-    const dispatch = useDispatch();
-    useEffect(() => {
-        if (!product) {
-            dispatch(loadFromStorage());
-        }
-    }, [product]);
+  const { product, form } = useSelector((state) => state.payment);
+  const dispatch = useDispatch();
 
+  useEffect(() => {
     if (!product) {
-        return <p>Loading...</p>;
+      dispatch(loadFromStorage());
     }
+  }, [product]);
 
-    const cardInfo = valid.number(form?.number);
-    const cardType = cardInfo.card?.type;
+  if (!product) return <p>Loading...</p>;
 
-    const handlePay = async () => {
-        setLoading(true);
-        try {
-            const data = {
-                card: {
-                    ...form,
-                    number: form.number.replace(/\s+/g, ''),
-                },
-                amount: product.price,
-                email: 'test@test.com',
-                productId: product.id,
-            }
+  const cardType = valid.number(form?.number).card?.type;
 
-            const res = await api.post('/payments/create', data);
+  const { loading, createPayment } = usePayment(product, form);
 
-            console.log('Respuesta del servidor:', res.data, res.data.wompi_response.data);
-            const wompi_response = res.data.wompi_response.data.id;
-            const transactionId = res.data.transaction_id.id;
-            pollTransaction(wompi_response, transactionId);
-
-        } catch (error) {
-            console.error(error);
-            toast.update('', {
-                position: "bottom-center",
-                render: 'Payment failed ❌',
-                type: 'error',
-                isLoading: false,
-                autoClose: 2000,
-            });
-            setLoading(false);
-        }
-    };
-
-    const pollTransaction = (wompi_response, productId) => {
-        let attempts = 0;
-
-        const interval = setInterval(async () => {
-            try {
-                attempts++;
-
-                const res = await api.get(`/payments/${wompi_response}`);
-                const status = res.data.data.status;
-
-                if (status === 'APPROVED') {
-                    clearInterval(interval);
-                    await api.patch(`/transactions/${productId}/SUCCESS`);
-                    navigate(`/result?status=approved&id=${wompi_response}`);
-                }
-
-                if (status === 'DECLINED') {
-                    clearInterval(interval);
-                    await api.patch(`/transactions/${productId}/FAILED`);
-                    navigate(`/result?status=declined&id=${wompi_response}`);
-                }
-
-
-                if (attempts > 10) {
-                    clearInterval(interval);
-                    navigate(`/result?status=timeout&id=${wompi_response}`);
-                }
-
-            } catch (error) {
-                console.error(error);
-                clearInterval(interval);
-                await api.patch(`/transactions/${productId}/FAILED`);
-                navigate(`/result?status=error&id=${wompi_response}`);
-            } finally {
-                setLoading(false);
-            }
-        }, 3000);
-    };
-
-    return (<>
+  return (<>
         <div className="container py-5">
             <div className="row justify-content-center">
                 <div className="col-md-6">
@@ -144,18 +67,18 @@ const Summary = () => {
                             </div>
                             <button
                                 className="btn btn-primary w-100 py-2 fw-semibold"
-                                onClick={handlePay}
+                                onClick={createPayment}
                             >
-                                Pay Now
-                            </button>
+        Pay Now
+      </button>
                         </div>
                     </div>
                 </div>
             </div>
 
         </div>
-        {loading &&
-            createPortal(
+      {loading &&
+        createPortal(
                 <div
                     style={{
                         position: 'fixed',
@@ -184,10 +107,10 @@ const Summary = () => {
                         <small>Please do not close this window</small>
                     </div>
                 </div>,
-                document.body
+          document.body
             )
         }</>
-    );
+  );
 };
 
 export default Summary;

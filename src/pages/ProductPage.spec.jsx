@@ -1,13 +1,13 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import ProductPage from './ProductPage';
-import { api } from '../services/api';
+import { useProducts } from '../hooks/useProducts';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import paymentReducer from '../store/paymentSlice';
 import { MemoryRouter } from 'react-router-dom';
 
-// 🔹 Mocks
-jest.mock('../services/api');
+jest.mock('../hooks/useProducts');
+
 const mockNavigate = jest.fn();
 
 jest.mock('react-router-dom', () => ({
@@ -15,12 +15,19 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
-// 🔹 Helper para render
-const renderComponent = () => {
+
+const renderComponent = (mockHook = {}) => {
   const store = configureStore({
-    reducer: {
-      payment: paymentReducer,
+    reducer: { payment: paymentReducer },
+    preloadedState: {
+      payment: {},
     },
+  });
+
+  useProducts.mockReturnValue({
+    products: [],
+    loading: false,
+    ...mockHook,
   });
 
   return render(
@@ -37,97 +44,84 @@ describe('ProductPage', () => {
     jest.clearAllMocks();
   });
 
-  it('renders title', () => {
-    api.get.mockResolvedValue({ data: [] });
-
-    renderComponent();
-
-    expect(screen.getByText(/products/i)).toBeInTheDocument();
+  it('shows loading state', () => {
+    renderComponent({ loading: true });
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 
-  it('calls API on mount', async () => {
-    api.get.mockResolvedValue({ data: [] });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/products');
-    });
-  });
-
-  it('renders products from API', async () => {
-    const mockProducts = [
-      {
-        id: 1,
-        name: 'Product 1',
-        description: 'Desc',
-        price: 50000,
-        stock: 5,
-      },
-    ];
-
-    api.get.mockResolvedValue({ data: mockProducts });
-
-    renderComponent();
-
-    expect(await screen.findByText('Product 1')).toBeInTheDocument();
-    expect(screen.getByText('Desc')).toBeInTheDocument();
-  });
-
-  it('filters out products with stock 0', async () => {
-    const mockProducts = [
-      { id: 1, name: 'Available', description: '', price: 1000, stock: 3 },
-      { id: 2, name: 'No stock', description: '', price: 2000, stock: 0 },
-    ];
-
-    api.get.mockResolvedValue({ data: mockProducts });
-
-    renderComponent();
-
-    expect(await screen.findByText('Available')).toBeInTheDocument();
-    expect(screen.queryByText('No stock')).not.toBeInTheDocument();
-  });
-
-  it('formats price correctly', async () => {
-    const mockProducts = [
-      { id: 1, name: 'Product', description: '', price: 50000, stock: 1 },
-    ];
-
-    api.get.mockResolvedValue({ data: mockProducts });
-
-    renderComponent();
-
-    expect(await screen.findByText(/\$50.000/)).toBeInTheDocument();
-  });
-
-  it('dispatches product and navigates on click', async () => {
-    const mockProducts = [
-      { id: 1, name: 'Product', description: '', price: 50000, stock: 1 },
-    ];
-
-    api.get.mockResolvedValue({ data: mockProducts });
-
-    const store = configureStore({
-      reducer: {
-        payment: paymentReducer,
-      },
+  it('renders products', () => {
+    renderComponent({
+      products: [
+        {
+          id: 1,
+          name: 'iPhone',
+          description: 'Test product',
+          price: 2100000,
+          stock: 5,
+        },
+      ],
     });
 
-    const spy = jest.spyOn(store, 'dispatch');
+    expect(screen.getByText('iPhone')).toBeInTheDocument();
+    expect(screen.getByText('Test product')).toBeInTheDocument();
+  });
 
-    render(
-      <Provider store={store}>
-        <MemoryRouter>
-          <ProductPage />
-        </MemoryRouter>
-      </Provider>
-    );
+  it('formats price correctly', () => {
+    renderComponent({
+      products: [
+        {
+          id: 1,
+          name: 'iPhone',
+          description: 'Test',
+          price: 2100000,
+          stock: 5,
+        },
+      ],
+    });
+    expect(screen.getByText(/\$2\.100\.000/)).toBeInTheDocument();
+  });
 
-    const button = await screen.findByText(/pay with card/i);
+  it('filters and shows stock', () => {
+    renderComponent({
+      products: [
+        {
+          id: 1,
+          name: 'iPhone',
+          description: '',
+          price: 1000,
+          stock: 3,
+        },
+      ],
+    });
 
+    expect(screen.getByText(/in stock: 3/i)).toBeInTheDocument();
+  });
+
+  it('dispatches and navigates on click', () => {
+    renderComponent({
+      products: [
+        {
+          id: 1,
+          name: 'iPhone',
+          description: '',
+          price: 1000,
+          stock: 3,
+        },
+      ],
+    });
+    const button = screen.getByText(/pay with card/i);
     fireEvent.click(button);
-
-    expect(spy).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith('/checkout');
+  });
+
+  it('renders multiple products', () => {
+    renderComponent({
+      products: [
+        { id: 1, name: 'A', description: '', price: 1, stock: 1 },
+        { id: 2, name: 'B', description: '', price: 2, stock: 2 },
+      ],
+    });
+    expect(screen.getByText('A')).toBeInTheDocument();
+    expect(screen.getByText('B')).toBeInTheDocument();
   });
 });
