@@ -2,20 +2,32 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { api } from '../services/api';
 import valid from 'card-validator';
-
+import { useSelector } from 'react-redux';
+import { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { setPaymentData, loadFromStorage } from '../store/paymentSlice';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 const Summary = () => {
-    const { state } = useLocation();
     const navigate = useNavigate();
+    const { product, form } = useSelector((state) => state.payment);
+    const [loading, setLoading] = useState(false);
+    const dispatch = useDispatch();
+    useEffect(() => {
+        if (!product) {
+            dispatch(loadFromStorage());
+        }
+    }, [product]);
 
-    if (!state) return <p>No hay datos</p>;
+    if (!product) {
+        return <p>Loading...</p>;
+    }
 
-    const { product, form } = state;
-
-    const cardInfo = valid.number(form.number);
+    const cardInfo = valid.number(form?.number);
     const cardType = cardInfo.card?.type;
 
     const handlePay = async () => {
-        const toastId = toast.loading('Processing payment...', { position: "bottom-center" });
+        setLoading(true);
         try {
             const data = {
                 card: {
@@ -33,17 +45,17 @@ const Summary = () => {
             const wompi_response = res.data.wompi_response.data.id;
             const transactionId = res.data.transaction_id.id;
             pollTransaction(wompi_response, transactionId);
-            toast.dismiss(toastId);
 
         } catch (error) {
             console.error(error);
-            toast.update(toastId, {
+            toast.update('', {
                 position: "bottom-center",
                 render: 'Payment failed ❌',
                 type: 'error',
                 isLoading: false,
                 autoClose: 2000,
             });
+            setLoading(false);
         }
     };
 
@@ -80,11 +92,13 @@ const Summary = () => {
                 clearInterval(interval);
                 await api.patch(`/transactions/${productId}/FAILED`);
                 navigate(`/result?status=error&id=${wompi_response}`);
+            } finally {
+                setLoading(false);
             }
         }, 3000);
     };
 
-    return (
+    return (<>
         <div className="container py-5">
             <div className="row justify-content-center">
                 <div className="col-md-6">
@@ -105,7 +119,7 @@ const Summary = () => {
                                 <div className="d-flex justify-content-between align-items-center border rounded-3 p-3 mt-2">
                                     <div>
                                         <div className="fw-semibold">
-                                            **** **** **** {form.number.slice(-4)}
+                                            **** **** **** {form?.number.slice(-4)}
                                         </div>
                                         <small className="text-muted">
                                             {form.card_holder} · {form.exp_month}/{form.exp_year}
@@ -138,7 +152,41 @@ const Summary = () => {
                     </div>
                 </div>
             </div>
+
         </div>
+        {loading &&
+            createPortal(
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        background: 'rgba(0,0,0,0.6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 999999,
+                    }}
+                >
+                    <div
+                        style={{
+                            background: '#fff',
+                            padding: '30px 40px',
+                            borderRadius: '16px',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+                            textAlign: 'center',
+                        }}
+                    >
+                        <div className="spinner-border text-primary mb-3" />
+                        <h5>Processing payment</h5>
+                        <small>Please do not close this window</small>
+                    </div>
+                </div>,
+                document.body
+            )
+        }</>
     );
 };
 
