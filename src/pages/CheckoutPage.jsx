@@ -1,91 +1,26 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import valid from 'card-validator';
-import { validateCardNumber, validateExpiry, validateCVV, validateCardHolder } from '../services/validatador';
-import { toast } from 'react-toastify';
-import { useSelector } from 'react-redux';
-import { useDispatch } from 'react-redux';
-import { setPaymentData, loadFromStorage } from '../store/paymentSlice';
+import { useSelector, useDispatch } from 'react-redux';
 import { useEffect } from 'react';
+import { loadFromStorage } from '../store/paymentSlice';
+import { useCheckout } from '../hooks/useCheckout';
 
 export default function CheckoutPage() {
   const product = useSelector((state) => state.payment.product);
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+
   useEffect(() => {
     dispatch(loadFromStorage());
   }, []);
 
-  const [form, setForm] = useState({
-    number: '',
-    exp_month: '',
-    exp_year: '',
-    cvc: '',
-    card_holder: '',
-  });
-
-  const [cardType, setCardType] = useState(null);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [acceptedData, setAcceptedData] = useState(false);
-
-  const formatCardNumber = (value) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(.{4})/g, '$1 ')
-      .trim();
-  };
-
-  const handleChange = (e) => {
-    let { name, value } = e.target;
-
-    if (name === 'number') {
-      value = formatCardNumber(value);
-
-      const cardInfo = valid.number(value);
-      setCardType(cardInfo.card?.type || null);
-    }
-
-    setForm({
-      ...form,
-      [name]: value,
-    });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!validateCardNumber(form.number)) {
-      toast.error('Invalid card number');
-      return;
-    }
-
-    if (!validateExpiry(`${form.exp_month}/${form.exp_year}`)) {
-      toast.error('Invalid expiry date');
-      return;
-    }
-
-    if (!validateCVV(form.cvc)) {
-      toast.error('Invalid CVV');
-      return;
-    }
-
-    if (!validateCardHolder(form.card_holder)) {
-      toast.error('Card holder name is invalid');
-      return;
-    }
-
-    if (!acceptedTerms) {
-      toast.error('You must accept terms and conditions');
-      return;
-    }
-
-    if (!acceptedData) {
-      toast.error('You must accept data processing');
-      return;
-    }
-    dispatch(setPaymentData({ product, form }));
-    navigate('/summary');
-  };
+  const {
+    form,
+    cardType,
+    acceptedTerms,
+    acceptedData,
+    setAcceptedTerms,
+    setAcceptedData,
+    handleChange,
+    handleSubmit,
+  } = useCheckout(product);
 
   return (
     <div className="container py-5">

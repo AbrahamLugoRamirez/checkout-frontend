@@ -32,14 +32,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
@@ -122,24 +122,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -156,7 +159,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -167,58 +169,56 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useEffect, useState } from 'react';
-import { api } from '../services/api';
-import { useNavigate } from 'react-router-dom';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setPaymentData } from '../store/paymentSlice';
+import { useProducts } from '../hooks/useProducts';
 &nbsp;
 export default function ProductPage() {
-  const [products, setProducts] = useState([]);
+  const { products, loading } = useProducts();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 &nbsp;
-  useEffect(() =&gt; {
-    api.get('/products').then(res =&gt; setProducts(res.data));
-  }, []);
+  const handleSelectProduct = (product) =&gt; {
+    dispatch(setPaymentData({ product }));
+    navigate('/checkout');
+  };
+&nbsp;
+  if (loading) return &lt;p&gt;Loading...&lt;/p&gt;;
 &nbsp;
   return (
     &lt;div className="container py-5"&gt;
       &lt;h1 className="text-center mb-5 fw-bold"&gt;Products&lt;/h1&gt;
 &nbsp;
       &lt;div className="row"&gt;
-        {products
-          .filter((p) =&gt; p.stock &gt; 0)
-          .map((p) =&gt; (
-            &lt;div className="col-md-4 mb-4" key={p.id}&gt;
-              &lt;div className="card border-0 shadow-sm h-100 rounded-4 product-card"&gt;
-                &lt;div className="card-body d-flex flex-column"&gt;
-                  &lt;h5 className="card-title fw-semibold"&gt;{p.name}&lt;/h5&gt;
-                  &lt;p className="text-muted small flex-grow-1"&gt;
-                    {p.description}
-                  &lt;/p&gt;
-                  &lt;h4 className="fw-bold mb-2"&gt;
-                    ${new Intl.NumberFormat('es-CO').format(p.price)}
-                  &lt;/h4&gt;
-                  &lt;span className="badge bg-success mb-3 align-self-start"&gt;
-                    In stock: {p.stock}
-                  &lt;/span&gt;
-                  &lt;button
-                    className="btn btn-primary w-100 mt-auto fw-semibold"
-                    onClick={() =&gt; {
-                      dispatch(setPaymentData({ product: p }));
-                      navigate('/checkout');
-                    }}
-                  &gt;
-                    Pay with card
-                  &lt;/button&gt;
+        {products.map((p) =&gt; (
+          &lt;div className="col-md-4 mb-4" key={p.id}&gt;
+            &lt;div className="card border-0 shadow-sm h-100 rounded-4"&gt;
+              &lt;div className="card-body d-flex flex-column"&gt;
+                &lt;h5 className="card-title fw-semibold"&gt;{p.name}&lt;/h5&gt;
 &nbsp;
-                &lt;/div&gt;
+                &lt;p className="text-muted small flex-grow-1"&gt;
+                  {p.description}
+                &lt;/p&gt;
+&nbsp;
+                &lt;h4 className="fw-bold mb-2"&gt;
+                  ${new Intl.NumberFormat('es-CO').format(p.price)}
+                &lt;/h4&gt;
+&nbsp;
+                &lt;span className="badge bg-success mb-3"&gt;
+                  In stock: {p.stock}
+                &lt;/span&gt;
+&nbsp;
+                &lt;button
+                  className="btn btn-primary w-100 mt-auto fw-semibold"
+                  onClick={() =&gt; handleSelectProduct(p)}
+                &gt;
+                  Pay with card
+                &lt;/button&gt;
               &lt;/div&gt;
             &lt;/div&gt;
-          ))}
+          &lt;/div&gt;
+        ))}
       &lt;/div&gt;
     &lt;/div&gt;
   );
@@ -229,7 +229,7 @@ export default function ProductPage() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-22T13:47:53.318Z
+                at 2026-03-22T14:01:50.320Z
             </div>
         <script src="../prettify.js"></script>
         <script>
