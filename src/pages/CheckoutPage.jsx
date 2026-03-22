@@ -3,10 +3,18 @@ import { useState } from 'react';
 import valid from 'card-validator';
 import { validateCardNumber, validateExpiry, validateCVV, validateCardHolder } from '../services/validatador';
 import { toast } from 'react-toastify';
+import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
+import { setPaymentData, loadFromStorage } from '../store/paymentSlice';
+import { useEffect } from 'react';
 
 export default function CheckoutPage() {
-  const { state: product } = useLocation();
+  const product = useSelector((state) => state.payment.product);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(loadFromStorage());
+  }, []);
 
   const [form, setForm] = useState({
     number: '',
@@ -75,26 +83,48 @@ export default function CheckoutPage() {
       toast.error('You must accept data processing');
       return;
     }
-
-    navigate('/summary', { state: { product, form } });
+    dispatch(setPaymentData({ product, form }));
+    navigate('/summary');
   };
 
   return (
     <div className="container py-5">
       <div className="row justify-content-center">
         <div className="col-md-4 mb-4">
-          <div className="card border-0 shadow-sm rounded-4">
+          <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+
+            {/* HEADER visual */}
+            <div className="bg-primary text-white p-3">
+              <small className="opacity-75">Order Summary</small>
+              <h5 className="mb-0">{product?.name}</h5>
+            </div>
+
             <div className="card-body">
-              <h5 className="mb-3">Order Summary</h5>
 
-              <p className="fw-semibold mb-1">{product?.name}</p>
-              <p className="text-muted small">{product?.description}</p>
+              {/* Descripción */}
+              <p className="text-muted small mb-3">
+                {product?.description}
+              </p>
 
-              <hr />
+              {/* Precio grande */}
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <span className="text-muted">Price</span>
+                <span className="fw-bold fs-4">
+                  ${new Intl.NumberFormat('es-CO').format(product?.price)}
+                </span>
+              </div>
 
-              <h4 className="fw-bold">
-                ${new Intl.NumberFormat('es-CO').format(product?.price)}
-              </h4>
+              {/* Divider bonito */}
+              <div className="my-3" style={{ borderTop: '1px dashed #ddd' }} />
+
+              {/* Total */}
+              <div className="d-flex justify-content-between align-items-center">
+                <span className="fw-semibold">Total</span>
+                <span className="fw-bold fs-5 text-primary">
+                  ${new Intl.NumberFormat('es-CO').format(product?.price)}
+                </span>
+              </div>
+
             </div>
           </div>
         </div>

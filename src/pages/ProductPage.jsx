@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setPaymentData } from '../store/paymentSlice';
 
 export default function ProductPage() {
   const [products, setProducts] = useState([]);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     api.get('/products').then(res => setProducts(res.data));
@@ -33,7 +36,10 @@ export default function ProductPage() {
                   </span>
                   <button
                     className="btn btn-primary w-100 mt-auto fw-semibold"
-                    onClick={() => navigate('/checkout', { state: p })}
+                    onClick={() => {
+                      dispatch(setPaymentData({ product: p }));
+                      navigate('/checkout');
+                    }}
                   >
                     Pay with card
                   </button>
