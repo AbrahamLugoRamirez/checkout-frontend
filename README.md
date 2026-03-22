@@ -77,6 +77,68 @@ Use only test cards:
 
 ---
 
+## 🧪 Test Coverage
+
+The project includes comprehensive unit tests for UI components, custom hooks, business logic, and state management using **Jest** and **React Testing Library**.
+
+### 📊 Coverage Summary
+
+```text
+Statements   : 98.88% (178/180)
+Branches     : 97.87% (92/94)
+Functions    : 100%   (36/36)
+Lines        : 98.78% (163/165)
+```
+
+### 📁 Coverage by Module
+
+| Module   | Statements | Branches | Functions | Lines |
+| -------- | ---------- | -------- | --------- | ----- |
+| hooks    | 97.77%     | 91.66%   | 100%      | 97.7% |
+| pages    | 100%       | 100%     | 100%      | 100%  |
+| services | 100%       | 100%     | 100%      | 100%  |
+| store    | 100%       | 100%     | 100%      | 100%  |
+
+---
+
+### ▶️ Run tests
+
+```bash
+npm test
+```
+
+### 📈 Generate coverage report
+
+```bash
+npm test -- --coverage
+```
+
+The detailed HTML report is available at:
+
+```text
+coverage/lcov-report/index.html
+```
+
+---
+
+### ✅ Highlights
+
+* High test coverage across all layers (UI, hooks, services, and state)
+* Full coverage in critical modules (pages, services, store)
+* Thorough validation of edge cases and error handling
+* Stable tests without flaky behavior (mocked async flows and timers)
+
+---
+
+### 🧠 Testing Strategy
+
+* **UI Testing:** React Testing Library
+* **Hooks Testing:** `renderHook` with isolated logic
+* **Mocking:** API, routing, Redux, and external libraries
+* **Edge Cases:** Error handling, async flows, conditional rendering
+
+---
+
 ## 👩‍💻 Author
 
 Abraham Lugo Ramirez
